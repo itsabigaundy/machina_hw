@@ -37,12 +37,12 @@ cd machina_hw
 
 6. In the second terminal, start up the first service server node:
 ```
-ros2 run sensor_service service sensor_node_1 get_sensor_sample_1 127.0.0.1 10000 200 8
+ros2 run sensor_service service sensor_server_node_1 get_sensor_sample_1 127.0.0.1 10000 200 8
 ```
 
 7. In the third terminal, start up the second service server node. You should see connection confirmation for both nodes in the first terminal:
 ```
-ros2 run sensor_service service sensor_node_2 get_sensor_sample_2 127.0.0.1 10001 200 8
+ros2 run sensor_service service sensor_server_node_2 get_sensor_sample_2 127.0.0.1 10001 200 8
 ```
 
 8. In the fourth terminal, start up the only service client node. You should see its output as it broadcasts to topic `sensor_topic`:
