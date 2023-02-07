@@ -1,0 +1,2 @@
+sensor_interfaces/SensorSample sample1
+sensor_interfaces/SensorSample sample2

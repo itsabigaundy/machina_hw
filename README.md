@@ -1,6 +1,4 @@
 # Robotic_HW
-## Context
-The design of our cells in Machina Labs has evolved over the past years. Currently, each of our cells has two articulated industrial robots on rails (a total of 7 axes) and a frame with hydraulic clamps. For the parts to form correctly, we must exert and maintain a dynamic force during the forming in a very accurate location in space. Currently, each robot is equipped with a load cell. See a quick video about our process [here](https://www.youtube.com/watch?v=iqYMprTEXRI). We are using ROS2 to collect the data from the network and control the robots in real-time. As a robotic engineer, we keep developing different modules for our network to add features to the system.  
  
 ## Objective
 The goal of This project is to build a ROS2 network that collects data from 3-DOF sensors and makes the filtered data available as a ROS service and topic. Since we cannot send a real sensor to all of our applicants, we made a simple simulator (sensor.py) that mimics the behavior of a real sensor but with random data. 
@@ -10,22 +8,58 @@ The goal of This project is to build a ROS2 network that collects data from 3-DO
 - You can define a second server in the simulator to modify the code and run two at the same time.
 - You can check the example.py to see how to make calls to the sensor
 
-## Grading Criteria
-- We’re looking for code that is clean, readable, performant, and maintainable.
-- The developer must think through the process of deploying and using the solution and provide the necessary documentation. 
-- The sensor samples with 2000Hz, and you can request a specific number of samples in each call. Each call also has a ~1ms delay on top of the sampling time. We would like to hear your thought on picking the number of samples that you read in each call. 
+## Running instructions
+This project was developed in Linux; as such, it has not been configured nor tested on any other platform. ROS2 Humble is required.
 
-## Submission
-To submit the assignment, do the following:
+1. Source the ROS underlay:
+```
+source /opt/ros/humble/setup.bash
+```
 
-1. Navigate to GitHub's project import page: [https://github.com/new/import](https://github.com/new/import)
+2. Navigate to this repository's root directory and check for missing dependencies:
+```
+cd machina_hw
+rosdep install -i --from-path src --rosdistro humble -y
+```
 
-2. In the box titled "Your old repository's clone URL", paste the homework repository's link: [https://github.com/Machina-Labs/robotic_hw](https://github.com/Machina-Labs/robotic_hw)
+3. Build all included packages:
+```
+colcon build
+```
 
-3. In the box titled "Repository Name", add a name for your local homework (ex. `Robotic_soln`)
+4. In a new terminal, navigate to `machina_hw` and source the setup files. Repeat this step for a third and fourth terminal.
+```
+cd machina_hw
+. install/setup.bash
+```
 
-4. Set the privacy level to "Public", then click "Begin Import" button at bottom of the page.
+5. In the first terminal, run `python3 sensor.py`. You should see messages indicating it's ready for connection.
 
-5. Develop your homework solution in the cloned repository and push it to GitHub when you're done. Extra points for good Git hygiene.
+6. In the second terminal, start up the first service server node:
+```
+ros2 run sensor_service service sensor_node_1 get_sensor_sample_1 127.0.0.1 10000 200 8
+```
 
-6. Send us the link to your repository.
+7. In the third terminal, start up the second service server node. You should see connection confirmation for both nodes in the first terminal:
+```
+ros2 run sensor_service service sensor_node_2 get_sensor_sample_2 127.0.0.1 10001 200 8
+```
+
+8. In the fourth terminal, start up the only service client node. You should see its output as it broadcasts to topic `sensor_topic`:
+```
+ros2 run sensor_service client 500
+```
+
+9. `Ctrl + C` to end each program.
+
+## Thoughts
+
+1. I notice that during development, when building packages only replacement-type or additive changes take effect. Specifically, renaming or removing files does not remove the corresponding component from the package on rebuild. I'm sure there is an option to do a clean build aside from removing the `build`, `install`, and `log` folders, but I'm not aware of it.
+
+2. Would've liked to have had `sensor_service` and `sensor_interfaces` in the same package, but I wrote `sensor_service` using Python. Unsure of naming conventions for sibling packages.
+
+3. I assume you wanted two nodes with one service server each; I could also see one node with two service servers.
+
+4. I'm unsure what you meant by "filtered" data, so I chose to only keep the most recent data sampled from the sensor in `sensor_service.server`.
+
+5. I chose to request 8 samples per sensor call. Because of the delay on top of the sampling time, we can never actually reach 2000Hz, or 4 samples per topic publish. To simplify the topic interface, I decided the next best thing to accomplish would be 3 samples per topic publish. To achieve this rate with a perfect 1ms delay requires 6 samples per sensor call, and requesting 7 samples per sensor call gives us an odd number, so I bumped it up to 8. Then all we have to do is store at least 9 samples since it takes approximately 2.5 periods of publishing topic data to obtain the samples from the sensor.
